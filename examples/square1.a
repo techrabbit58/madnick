@@ -1,0 +1,29 @@
+// calculate the square of the input number
+
+        inp
+        sta x
+
+        lda x
+        sta y
+
+loop    lda y
+        brz end
+        sub one
+        sta y
+        lda ans
+        add x
+        sta ans
+        bra loop
+
+end     lda ans
+        out
+        sub ans
+        sta ans
+        hlt
+
+x       dat
+y       dat
+one     dat 1
+ans dat     0
+
+// eot

@@ -1,0 +1,6 @@
+// copy one input to the output
+
+    INP
+    STA 20
+    OUT
+    HLT

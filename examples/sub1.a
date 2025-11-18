@@ -1,0 +1,15 @@
+// input two numbers and subtract the second from the first
+
+    inp
+    sta A
+    inp
+    sta b
+    lda a
+    sub B
+    out
+    hlt
+
+A   dat
+b   dat
+
+//eot

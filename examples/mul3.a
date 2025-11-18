@@ -1,0 +1,68 @@
+// Multiply two inputs a and b. Both are signed numbers.
+// The signs of both numbers must be handled correctly.
+
+first   inp
+        sta a
+        brp second
+
+        // do this if a is negative
+        lda neg_one
+        sub sign
+        sta sign
+
+        // ... and store only magnitude of a
+        lda a
+        sub a
+        sub a
+        sta a
+
+second  inp
+        sta b
+        brp multiply
+
+        // do this if b is negative
+        lda neg_one
+        sub sign
+        sta sign
+
+        // ... and store only magnitude of b
+        lda b
+        sub b
+        sub b
+        sta b
+
+multiply brz finish  // we are done if b is zero
+        lda result   // result := result + a
+        add a
+        sta result
+        lda b        // decrement b
+        sub one
+        sta b
+        bra multiply // continue until b is zero
+
+finish  lda sign
+        brz do_output  // if sign is not negative, result is positive
+
+        // if result is negative (sign < 0), make result negative
+        lda result
+        sub result
+        sub result
+        sta result
+
+do_output lda result
+        out
+        hlt
+
+        org 70      // variables
+a       dat
+b       dat
+result  dat 0
+
+        org 75
+sign    dat 0       // -1 if result is negative, 0 if result is positive
+
+        org 80      // constant values
+neg_one dat -1
+one     dat 1
+
+// end of file

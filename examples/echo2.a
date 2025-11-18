@@ -1,0 +1,5 @@
+inp
+sta a
+out
+hlt
+a dat

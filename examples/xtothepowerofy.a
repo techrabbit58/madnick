@@ -1,0 +1,29 @@
+    inp
+    sta base
+
+    inp
+    sta exponent
+
+    sub one
+    sta exponent
+
+loop lda exponent
+    brz end
+    sub one
+    sta exponent
+    lda base
+    add base
+    sta base
+    brp loop
+
+end lda base
+    out
+    sub base
+    sta base
+    hlt
+
+base dat
+exponent dat
+one dat 1
+
+// eot

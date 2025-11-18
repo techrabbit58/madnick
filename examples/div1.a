@@ -1,0 +1,27 @@
+// divide input M by input N
+
+        inp
+        sta m
+
+        inp
+        sta n
+
+loop    lda m
+        brz end
+        sub n
+        sta m
+        lda ans
+        add one
+        sta ans
+        bra loop
+
+end     lda ans
+        out
+        sub ans
+        sta ans
+        hlt
+
+m       dat
+n       dat
+ans     dat
+one     dat 1

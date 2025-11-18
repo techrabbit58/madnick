@@ -1,0 +1,14 @@
+// ADD TWO INPUT NUMBERS
+
+    inp
+    sta a
+    inp
+    sta b
+    lda a
+    add b
+    out
+    hlt
+a   dat
+b   dat
+
+// EOT

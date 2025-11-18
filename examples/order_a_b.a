@@ -1,0 +1,32 @@
+// given two input numbers, compare and order so that the smaller
+// number gets output first
+
+    inp
+    sta a
+
+    inp
+    sta b
+
+    sub a
+    brp end         // a and b are already in order
+
+    // at this point, a and b are not in order and must be swapped
+    lda b
+    sta aux
+    lda a
+    sta b
+    lda aux
+    sta a
+
+    // at this point, a and b are in order
+end lda a
+    out
+    lda b
+    out
+
+    org 90
+a   dat
+b   dat
+aux dat
+
+    // last ins

@@ -1,0 +1,7 @@
+lda a
+lda b
+add a
+out
+hlt
+a dat 40
+b dat 2

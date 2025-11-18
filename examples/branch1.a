@@ -1,0 +1,24 @@
+// input two numbers and find the bigger number
+
+    inp
+    sta a
+
+    inp
+    sta b
+
+    lda a
+    sub b
+    brp is_positive
+
+    lda b
+    out
+    hlt
+
+is_positive lda a
+    out
+    hlt
+
+a   dat
+b   dat
+
+// eot

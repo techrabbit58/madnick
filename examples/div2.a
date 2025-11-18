@@ -1,0 +1,43 @@
+// Calculate numerator divided by divisor giving division result and remainder.
+// Works as expected only for numerators and divisors in the range (0..499),
+// which are positive numbers with regard to the 10th complement (base 10^3)
+// ALU of the LMC. The program can detect zero division errors and does stop
+// immediately with the single output -1.
+
+        inp
+        sta numerator
+        sta remainder
+        inp
+        sta divisor
+        brz div_by_zero
+
+divide  lda remainder
+        sub divisor
+        brp next
+        bra done
+
+next    sta remainder
+        lda result
+        add one
+        sta result
+        bra divide
+
+done    lda result
+        out
+        lda remainder
+        out
+        hlt
+
+div_by_zero lda one
+        sub one
+        sub one
+        out
+
+        org 90
+numerator dat
+divisor dat
+result  dat
+remainder dat
+
+        org 99
+one     dat 1

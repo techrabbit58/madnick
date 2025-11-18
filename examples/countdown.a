@@ -1,0 +1,19 @@
+        inp             // read a number
+        sta A           // and store it to location a
+
+LOOP    lda A           // get the stored number
+        out             // and write to the output
+        sub ONE         // decrement
+        sta A           // and write bac the new value
+        brz ENDTHIS     // branch if A is zero due to the decrement
+        bra LOOP        // or instead decrement and output once more
+
+ENDTHIS lda A           // at this point A is 1
+        sub A           // count down to zero
+        out             // and output this
+        hlt             // then stop
+
+A       dat
+ONE     dat 1
+
+// end

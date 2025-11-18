@@ -1,0 +1,14 @@
+// given a number from the input, calculate the magnitude or absolute value
+
+    inp
+    brp ispos       // jump to output if the given number is already >= 0
+    sta negnum      // store to negative number buffer
+    sub negnum      // subtract twice (0 = -x - -x, +x = 0 - -x)
+    sub negnum
+
+ispos out
+
+    org 90
+negnum dat
+
+    //eot

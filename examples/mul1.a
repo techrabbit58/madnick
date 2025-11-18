@@ -1,0 +1,25 @@
+// Multiply a by b, run forever if b < 0
+
+        inp         // read a
+        sta a
+        inp         // read b
+        sta b
+
+loop    brz is_done // break the loop if b is zero
+        lda result  // else: result := result + a
+        add a
+        sta result  // and write back to the memory
+        lda b       // decrement b
+        sub one
+        sta b       // and write back to the memory
+        bra loop    // go back and check if b is now zero
+
+is_done lda result  // a has been multiplied by b
+        out         // ... so write result to output
+        hlt         // ... and stop
+
+        org 60      // let data area start at memory location 60
+result  dat 0
+a       dat
+b       dat
+one     dat 1

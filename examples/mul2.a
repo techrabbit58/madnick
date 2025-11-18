@@ -1,0 +1,27 @@
+// multiply first input by second input
+
+    inp
+    sta first
+
+    inp
+    sta second
+
+loop lda second
+    brz is_done
+    sub one
+    sta second
+    lda ans
+    add first
+    sta ans
+    bra loop
+
+is_done lda ans
+    out
+    sub ans
+    sta ans
+    hlt
+
+first dat
+second dat
+one dat 1
+ans dat 0
