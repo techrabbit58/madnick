@@ -21,7 +21,7 @@ def run(
         inp: Annotated[list[int], typer.Argument(
             min=-500, max=499, help="Run with a list of input numbers")] = None,
         signed: Annotated[bool, typer.Option(
-            "--signed", help="Signed output (default: unsigned numbers)")] = False) -> None:
+            "--signed/--unsigne", help="Signed output (default: unsigned numbers)")] = False) -> None:
     asm = Assembler()
     code = asm.run(prog.read_text())
     vm = LMC()
