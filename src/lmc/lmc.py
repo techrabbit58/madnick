@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 import rich
 import typer
 
-from .vm import LMC, card_input, Console
+from .vm import LMC, int_reader, Console, IntWriter
 from .assembler import asm
 
 app = typer.Typer(
@@ -22,15 +22,17 @@ def run(
     rich.print(f"[bold yellow]run[/] [cyan]{prog}[/]"
                f" {f'with input {inp}' if inp is not None else 'without input'} ...")
 
+    if not inp:
+        inp = []
     code = asm(prog.read_text())
     vm = LMC()
     vm.load(code)
-    vm.set_input(card_input(*inp))
-    console = Console()
-    vm.set_output(console.output)
+    vm.set_input(int_reader(*inp))
+    output = IntWriter()
+    vm.set_output(output.write)
     vm.run()
     rich.print(vm)
-    rich.print(console)
+    rich.print(output)
 
 
 

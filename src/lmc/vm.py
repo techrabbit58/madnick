@@ -17,16 +17,6 @@ def to_signed(value: int, base: int = 1000) -> int:
     return sign * value
 
 
-def add(a: int, b: int, base: int = 1000) -> int:
-    result = a + b
-    return (result - base) if result >= base else result
-
-
-def sub(a: int, b: int, base: int = 1000) -> int:
-    result = a + base - b
-    return (result - base) if result >= base else result
-
-
 def disassemble(op: int, addr: int) -> str:
     match op, addr:
         case (0, _):
@@ -78,15 +68,27 @@ class Console:
         return f"OUT: {text or None}"
 
 
-def card_input(*cards: int) -> Callable[[], int]:
+def int_reader(*cards: int) -> Callable[[], int]:
     stack = list(reversed(cards))
 
     def int_provider() -> int | None:
         if stack:
-            return stack.pop()
+            return tens_complement(stack.pop())
         return None
 
     return int_provider
+
+
+class IntWriter:
+    def __init__(self, base: int = 1000) -> None:
+        self._cards: list[int] = []
+        self.base = base
+
+    def write(self, value: int) -> None:
+        self._cards.append(value)
+
+    def __str__(self) -> str:
+        return ", ".join(map(str, self._cards))
 
 
 class LMC:
@@ -103,6 +105,7 @@ class LMC:
     cir: tuple[int, int]  # current instruction register (CIR)
     is_zero: bool
     is_nonnegative: bool
+    overflow: bool
 
     def __init__(self) -> None:
         self.mem = [0] * self.MEMSIZE
@@ -142,6 +145,8 @@ class LMC:
         self.mdr = self.mem[self.mar]
 
     def _set_flags(self) -> None:
+        carry, self.acc = divmod(self.acc, self.BASE)
+        self.overflow = carry != 0
         self.is_zero = self.acc == 0
         self.is_nonnegative = self.acc < self.BASE // 2
 
@@ -160,9 +165,9 @@ class LMC:
             case 0:  # HLT
                 self._is_terminated = True
             case 1:  # ADD addr
-                self.acc = add(self.acc, self.mdr, self.BASE)
+                self.acc += self.mdr
             case 2:  # SUB addr
-                self.acc = sub(self.acc, self.mdr, self.BASE)
+                self.acc -= self.mdr
             case 3:  # STA addr
                 self.mdr = self.acc
                 self._write_mem()
@@ -178,9 +183,14 @@ class LMC:
                     self.pc = self.mar
             case 9 if self.cir[1] == 1:  # INP
                 n = self._read_input()
+                if n is None:
+                    self._error = f"End of input file"
+                    self._is_terminated = True
+                    return
                 if not 0 <= n < self.BASE:
                     self._error = f"Input out of range (0..{self.BASE - 1}): {n}"
                     self._is_terminated = True
+                    return
                 self.acc = n
             case 9 if self.cir[1] == 2:  # OUT
                 self._write_output(self.acc)
@@ -221,8 +231,8 @@ class LMC:
         print(f"-----{'------' * 10}", file=sb)
         print(f"ACC={self.acc}, MAR={self.mar}, MDR={self.mdr}, ", file=sb, end="")
         print(f"CIR={disassemble(*self.cir)}, PC={self.pc}, RS={self.run_state}", file=sb)
-        print(f"Flags: Z={int(self.is_zero)}, P={int(self.is_nonnegative)}", end="", file=sb)
-        print(f", E={int(self.error is not None)}", file=sb)
+        print(f"Flags: Z={int(self.is_zero)}, P={int(self.is_nonnegative)}, ", end="", file=sb)
+        print(f"O={int(self.overflow)}, E={int(self.error is not None)}", file=sb)
         print(f"Error: {self._error}", file=sb)
         return sb.getvalue()
 

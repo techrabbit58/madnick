@@ -1,0 +1,37 @@
+// Take a positive integer number greater than zero as the number of
+// numbers from the Fibonacci series, with 1 as first, 1 as second,
+// 2 as third and so forth.
+
+        inp
+        brz range_error
+        sta n
+
+loop    lda n
+        sub one
+        sta n
+        brp output
+        hlt
+
+output  lda a
+        out
+        sta aux
+        lda b
+        sta a
+        add aux
+        sta b
+        bra loop
+
+        // in case of a range error, answer "-1" (10's komplement)
+range_error lda one
+        sub one
+        sub one
+        out
+
+        // variables
+a       dat 1
+b       dat 1
+aux     dat
+n       dat
+
+        // constants
+one     dat 1
