@@ -1,6 +1,6 @@
 import io
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 import rich
 
@@ -68,13 +68,14 @@ class Console:
         return f"OUT: {text or None}"
 
 
-def int_reader(*cards: int) -> Callable[[], int]:
-    stack = list(reversed(cards))
+def int_reader(cards: Iterable[int]) -> Callable[[], int]:
+    card = iter(cards) if cards is not None else iter([])
 
     def int_provider() -> int | None:
-        if stack:
-            return tens_complement(stack.pop())
-        return None
+        try:
+            return tens_complement(next(card))
+        except StopIteration:
+            return None
 
     return int_provider
 
@@ -235,20 +236,3 @@ class LMC:
         print(f"O={int(self.overflow)}, E={int(self.error is not None)}", file=sb)
         print(f"Error: {self._error}", file=sb)
         return sb.getvalue()
-
-
-def main() -> None:
-    program = json.load(open("lmc.code"))
-    vm = LMC()
-    console = Console()
-    vm.load(program)
-    vm.set_input(console.input)
-    vm.set_output(console.output)
-    vm.reset()
-    vm.run()
-    rich.print(vm)
-    rich.print(console)
-
-
-if __name__ == '__main__':
-    main()

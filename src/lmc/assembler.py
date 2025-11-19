@@ -133,32 +133,3 @@ class Assembler(Transformer):
 def asm(src: str):
     parser = Lark(grammar, parser="lalr", transformer=Assembler())
     return parser.parse(src)
-
-
-def main() -> None:
-    cli_args = get_cli_args()
-
-    try:
-        with open(cli_args.a_file) as f:
-            try:
-                mem_image = asm(f.read())
-            except UnexpectedInput as e:
-                rich.print(f"[red]{e}[/]")
-                exit()
-
-    except FileNotFoundError:
-        rich.print(f"[red]File not found: \"{cli_args.a_file}\"[/]")
-        exit()
-
-    if not mem_image:
-        rich.print("[yellow]No input. Nothing to do. Output file not written.[/]")
-        exit()
-
-    with open("lmc.code", "w") as f:
-        json.dump(mem_image, f)
-
-    rich.print(f"[green]Done. Output written to file \"lmc.code\"[/]")
-
-
-if __name__ == "__main__":
-    main()
