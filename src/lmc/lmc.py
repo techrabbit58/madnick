@@ -4,7 +4,7 @@ from typing import Annotated
 import rich
 import typer
 
-from .assembler import asm
+from .assembler import Assembler
 from .vm import LMC, int_reader, IntWriter
 
 app = typer.Typer(
@@ -16,16 +16,18 @@ app = typer.Typer(
 
 @app.command(help="Assemble, load and run a given LMC program")
 def run(
-        prog: Annotated[Path, typer.Argument(exists=True, help="The LMC assembler program to be run")],
-        inp: Annotated[list[int], typer.Argument(min=-500, max=499)] = None) -> None:
-    rich.print(f"[bold yellow]run[/] [cyan]{prog}[/] [yellow]"
-               f"{f'with input[/] {inp}' if inp is not None else 'without input'} ...")
-
-    code = asm(prog.read_text())
+        prog: Annotated[Path, typer.Argument(
+            exists=True, help="The LMC assembler program to be run")],
+        inp: Annotated[list[int], typer.Argument(
+            min=-500, max=499, help="Run with a list of input numbers")] = None,
+        signed: Annotated[bool, typer.Option(
+            "--signed", help="Signed output (default: unsigned numbers)")] = False) -> None:
+    asm = Assembler()
+    code = asm.run(prog.read_text())
     vm = LMC()
     vm.load(code)
     vm.set_input(int_reader(inp))
-    output = IntWriter()
+    output = IntWriter(signed=signed)
     vm.set_output(output.write)
     vm.run()
     if vm.run_state == "abort":

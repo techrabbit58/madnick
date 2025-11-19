@@ -1,7 +1,4 @@
 import argparse
-import json
-
-import rich
 from lark import Lark, Transformer, Token, Tree, UnexpectedInput
 
 
@@ -62,6 +59,10 @@ class Assembler(Transformer):
 
     def __init__(self):
         super().__init__()
+        self._parser = Lark(grammar, parser="lalr", transformer=self)
+        self.reset()
+
+    def reset(self) -> None:
         self.labels = {}
         self.memory = []
         self.location = 0
@@ -129,7 +130,6 @@ class Assembler(Transformer):
         token.value = int(token.value)
         return token
 
-
-def asm(src: str):
-    parser = Lark(grammar, parser="lalr", transformer=Assembler())
-    return parser.parse(src)
+    def run(self, src: str):
+        self.reset()
+        return self._parser.parse(src)

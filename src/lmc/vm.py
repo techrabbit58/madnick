@@ -1,8 +1,5 @@
 import io
-import json
 from collections.abc import Callable, Iterable
-
-import rich
 
 
 def tens_complement(value: int, base: int = 1000) -> int:
@@ -45,29 +42,6 @@ def disassemble(op: int, addr: int) -> str:
             return f"undefined {op, addr}"
 
 
-class Console:
-    def __init__(self) -> None:
-        self._results = []
-
-    def output(self, value: int) -> None:
-        self._results.append(to_signed(value))
-
-    @staticmethod
-    def input() -> int:
-        while True:
-            try:
-                n = int(input("INP? "))
-                if not -500 <= n <= 499:
-                    raise ValueError()
-                return tens_complement(n)
-            except ValueError:
-                print("INP must be an integer (-500 <= n <= 499). Try again.")
-
-    def __str__(self) -> str:
-        text = ", ".join(map(str, self._results))
-        return f"OUT: {text or None}"
-
-
 def int_reader(cards: Iterable[int]) -> Callable[[], int]:
     card = iter(cards) if cards is not None else iter([])
 
@@ -81,12 +55,19 @@ def int_reader(cards: Iterable[int]) -> Callable[[], int]:
 
 
 class IntWriter:
-    def __init__(self, base: int = 1000) -> None:
+    def __init__(self, base: int = 1000, signed: bool = False) -> None:
         self._cards: list[int] = []
         self.base = base
+        self.signed = signed
 
     def write(self, value: int) -> None:
+        if self.signed:
+            value = to_signed(value, self.base)
         self._cards.append(value)
+
+    @property
+    def data(self) -> list[int]:
+        return self._cards.copy()
 
     def __str__(self) -> str:
         return ", ".join(map(str, self._cards))
@@ -106,7 +87,7 @@ class LMC:
     cir: tuple[int, int]  # current instruction register (CIR)
     is_zero: bool
     is_nonnegative: bool
-    overflow: bool
+    carry: int
 
     def __init__(self) -> None:
         self.mem = [0] * self.MEMSIZE
@@ -124,6 +105,7 @@ class LMC:
         self.mar = 0
         self.mdr = 0
         self.cir = 0, 0
+        self.carry = 1
         self._set_flags()
 
     def clear(self) -> None:
@@ -146,8 +128,6 @@ class LMC:
         self.mdr = self.mem[self.mar]
 
     def _set_flags(self) -> None:
-        carry, self.acc = divmod(self.acc, self.BASE)
-        self.overflow = carry != 0
         self.is_zero = self.acc == 0
         self.is_nonnegative = self.acc < self.BASE // 2
 
@@ -168,7 +148,7 @@ class LMC:
             case 1:  # ADD addr
                 self.acc += self.mdr
             case 2:  # SUB addr
-                self.acc -= self.mdr
+                self.acc += self.BASE - self.mdr
             case 3:  # STA addr
                 self.mdr = self.acc
                 self._write_mem()
@@ -198,6 +178,8 @@ class LMC:
             case _:
                 self._error = f"Bad instruction {self.cir}"
                 self._is_terminated = True
+        self.carry = self.acc // self.BASE
+        self.acc %= self.BASE
         self._set_flags()
 
     def single_step(self) -> None:
@@ -233,6 +215,6 @@ class LMC:
         print(f"ACC={self.acc}, MAR={self.mar}, MDR={self.mdr}, ", file=sb, end="")
         print(f"CIR={disassemble(*self.cir)}, PC={self.pc}, RS={self.run_state}", file=sb)
         print(f"Flags: Z={int(self.is_zero)}, P={int(self.is_nonnegative)}, ", end="", file=sb)
-        print(f"O={int(self.overflow)}, E={int(self.error is not None)}", file=sb)
+        print(f"E={int(self.error is not None)}", file=sb)
         print(f"Error: {self._error}", file=sb)
         return sb.getvalue()
