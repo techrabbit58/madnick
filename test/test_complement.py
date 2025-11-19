@@ -1,6 +1,6 @@
 import pytest
 
-from .vm import tens_complement, to_signed
+from lmc.vm import tens_complement, to_signed
 
 
 @pytest.mark.parametrize("signed, expected", [

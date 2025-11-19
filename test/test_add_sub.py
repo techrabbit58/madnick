@@ -2,8 +2,8 @@ import textwrap
 
 import pytest
 
-from .vm import LMC, int_reader, IntWriter
-from .assembler import Assembler
+from lmc.vm import LMC, int_reader, IntWriter
+from lmc.assembler import Assembler
 
 @pytest.fixture
 def lmc() -> LMC:
