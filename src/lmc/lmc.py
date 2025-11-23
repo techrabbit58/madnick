@@ -1,18 +1,12 @@
 from pathlib import Path
-from typing import Annotated, Generator, Self
+from typing import Annotated
 
 import rich
 import typer
-from rich.syntax import Syntax
-from rich.text import Text
-from textual import events
-from textual.app import App, ComposeResult, RenderResult
+from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
-from textual.reactive import reactive
-from textual.visual import VisualType
-from textual.widget import Widget
-from textual.widgets import Header, Footer, Static, Digits, Label
+from textual.widgets import Header, Footer, Static, Digits
 
 from .assembler import Assembler
 from .vm import LMC, int_reader, IntWriter, disassemble
@@ -75,13 +69,14 @@ class ScreenApp(App):
     SUB_TITLE = "The Little Man Computer"
 
     BINDINGS = [
+        Binding("r", "reset", "Reset"),
         Binding("s", "step", "Step"),
         Binding("q", "quit", "Quit", priority=True),
     ]
 
     DEFAULT_CSS = """
     .registerbox { width: auto; margin: 1 1; }
-    .memorybox { width: 4fr; height: 1fr; margin: 1 1 0 0; }
+    .memorybox { width: 3fr; height: 1fr; margin: 1 1 0 0; }
     .outputbox { width: 1fr; height: 1fr; margin: 1 0 0 0; }
     .flagsbox { width: 1fr; height: 3; margin: 0 1 0 0; }
     .inputbox { width: 1fr; height: 3; margin: 0 1 0 0; }
@@ -110,6 +105,11 @@ class ScreenApp(App):
 
     async def _ready(self) -> None:
         self.update_widgets()
+
+    def action_reset(self) -> None:
+        self.vm.reset()
+        self.update_widgets()
+        self.refresh()
 
     def action_step(self) -> None:
         # self.vm.single_step()
