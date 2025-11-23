@@ -71,6 +71,7 @@ class ScreenApp(App):
     BINDINGS = [
         Binding("r", "reset", "Reset"),
         Binding("s", "step", "Step"),
+        Binding("x", "execute", "Execute"),
         Binding("q", "quit", "Quit", priority=True),
     ]
 
@@ -114,6 +115,11 @@ class ScreenApp(App):
     def action_step(self) -> None:
         # self.vm.single_step()
         self.vm.mdr = 901
+        self.update_widgets()
+        self.refresh()
+
+    def action_execute(self) -> None:
+        # TODO: action needs to be defined ...
         self.update_widgets()
         self.refresh()
 
