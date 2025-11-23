@@ -1,19 +1,21 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Generator, Self
 
 import rich
 import typer
 from rich.syntax import Syntax
 from rich.text import Text
+from textual import events
 from textual.app import App, ComposeResult, RenderResult
-from textual.containers import ScrollableContainer
 from textual.binding import Binding
+from textual.containers import Horizontal, Vertical
 from textual.reactive import reactive
+from textual.visual import VisualType
 from textual.widget import Widget
-from textual.widgets import Header, Footer, Static
+from textual.widgets import Header, Footer, Static, Digits, Label
 
 from .assembler import Assembler
-from .vm import LMC, int_reader, IntWriter
+from .vm import LMC, int_reader, IntWriter, disassemble
 
 app = typer.Typer(
     help="Run an LMC program.",
@@ -30,7 +32,6 @@ def run(
             min=-500, max=499, help="Run with a list of input numbers")] = None,
         signed: Annotated[bool, typer.Option(
             "--signed/--unsigne", help="Signed output (default: unsigned numbers)")] = False) -> None:
-
     asm = Assembler()
     code = asm.run(prog.read_text())
     vm = LMC()
@@ -45,15 +46,28 @@ def run(
         rich.print("OK", output)
 
 
-class CodeView(Widget):
-    """Widget to display Python code."""
+class BoxedDigits(Digits):
+    def __init__(self, title: str, *args, **kwargs) -> None:
+        super().__init__(*args, id=title, **kwargs)
+        self.border_title = title.upper()
 
-    code = reactive("")
 
-    def render(self) -> RenderResult:
-        # Syntax is a Rich renderable that displays syntax highlighted code
-        syntax = Syntax(self.code, "c-objdump", line_numbers=True, indent_guides=True)
-        return syntax
+class Register(BoxedDigits):
+    def update(self, value: int) -> None:
+        super().update(f"{value:03d}")
+
+
+class CurrentInstruction(BoxedDigits):
+    def update(self, instruction: tuple[int, int]) -> None:
+        opcode, addr = instruction
+        opname, *_ = disassemble(opcode, addr).split()
+        super().update(f"{opcode}{opname} {addr:02d}")
+
+
+class BoxedStatic(Static):
+    def __init__(self, title: str, *args, **kwargs) -> None:
+        super().__init__(*args, id=title, **kwargs)
+        self.border_title = title.upper()
 
 
 class ScreenApp(App):
@@ -66,7 +80,15 @@ class ScreenApp(App):
     ]
 
     DEFAULT_CSS = """
-    .box { width: 1fr; }
+    .registerbox { width: auto; margin: 1 1; }
+    .memorybox { width: 4fr; height: 1fr; margin: 1 1 0 0; }
+    .outputbox { width: 1fr; height: 1fr; margin: 1 0 0 0; }
+    .flagsbox { width: 1fr; height: 3; margin: 0 1 0 0; }
+    .inputbox { width: 1fr; height: 3; margin: 0 1 0 0; }
+    .register { border: solid; text-align: right; width: 20; padding: 0 1 0 0; }
+    .output { border: solid; text-align: right; width: 1fr; height: 1fr; padding: 0 1; }
+    .narrowbox { border: solid; padding: 0 1; text-align: center; height: 1fr; width: 12; }
+    .widebox { border: solid; padding: 0 1; height: 1fr; width: 1fr; }
     """
 
     def __init__(self, prog: Path, *args, **kwargs) -> None:
@@ -75,15 +97,61 @@ class ScreenApp(App):
         asm = Assembler()
         code = asm.run(prog.read_text())
         self.vm.load(code)
-        self.reg_view = Static(Text(str(self.vm)), classes="box")
+
+    def update_widgets(self) -> None:
+        for reg in ("pc", "acc", "cir", "mar", "mdr"):
+            if reg == "cir":
+                self.get_widget_by_id(reg, CurrentInstruction).update(getattr(self.vm, reg))
+            else:
+                self.get_widget_by_id(reg, Register).update(getattr(self.vm, reg))
+        self.get_widget_by_id("z-flag", BoxedStatic).update(str(self.vm.is_zero))
+        self.get_widget_by_id("p-flag", BoxedStatic).update(str(self.vm.is_nonnegative))
+        self.get_widget_by_id("error", BoxedStatic).update(str(self.vm.error))
+
+    async def _ready(self) -> None:
+        self.update_widgets()
 
     def action_step(self) -> None:
-        self.vm.single_step()
+        # self.vm.single_step()
+        self.vm.mdr = 901
+        self.update_widgets()
+        self.refresh()
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield ScrollableContainer(
-            self.reg_view
+        yield Vertical(
+            Horizontal(
+                Vertical(
+                    Register("pc", classes="register"),
+                    Register("acc", classes="register"),
+                    CurrentInstruction("cir", classes="register"),
+                    Register("mar", classes="register"),
+                    Register("mdr", classes="register"),
+                    classes="registerbox"
+                ),
+                Vertical(
+                    Horizontal(
+                        Vertical(
+                            Static(str(self.vm), classes="widebox"),
+                            classes="memorybox"
+                        ),
+                        Vertical(
+                            BoxedStatic("Output", classes="output"),
+                            classes="outputbox"
+                        )
+                    ),
+                    Horizontal(
+                        BoxedStatic("z-flag", classes="narrowbox"),
+                        BoxedStatic("p-flag", classes="narrowbox"),
+                        BoxedStatic("error", classes="widebox"),
+                        classes="flagsbox"
+                    ),
+                    Vertical(
+                        Static("Inputs...", classes="widebox"),
+                        classes="inputbox"
+                    )
+                )
+            ),
         )
         yield Footer()
 

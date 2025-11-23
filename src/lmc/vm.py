@@ -116,6 +116,7 @@ class LMC:
     def load(self, program: list[tuple[int, int]]) -> None:
         for self.mar, self.mdr in program:
             self._write_mem()
+        self.reset()
 
     @property
     def error(self) -> str | None:
