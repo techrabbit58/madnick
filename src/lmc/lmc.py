@@ -55,7 +55,7 @@ class CurrentInstruction(BoxedDigits):
     def update(self, instruction: tuple[int, int]) -> None:
         opcode, addr = instruction
         opname, *_ = disassemble(opcode, addr).split()
-        super().update(f"{opcode}{opname} {addr:02d}")
+        super().update(f"{opcode} {addr:02d}")
 
 
 class BoxedStatic(Static):
@@ -77,14 +77,15 @@ class ScreenApp(App):
 
     DEFAULT_CSS = """
     .registerbox { width: auto; margin: 1 1; }
-    .memorybox { width: 3fr; height: 1fr; margin: 1 1 0 0; }
-    .outputbox { width: 1fr; height: 1fr; margin: 1 0 0 0; }
+    .memorybox { width: 1fr; height: 1fr; margin: 1 1 0 0; }
+    .outputbox { width: auto; height: 1fr; margin: 1 0 0 0; }
     .flagsbox { width: 1fr; height: 3; margin: 0 1 0 0; }
     .inputbox { width: 1fr; height: 3; margin: 0 1 0 0; }
     .register { border: solid; text-align: right; width: 20; padding: 0 1 0 0; }
-    .output { border: solid; text-align: right; width: 1fr; height: 1fr; padding: 0 1; }
+    .output { border: solid; text-align: center; width: 13; height: 1fr; padding: 0 1; }
     .narrowbox { border: solid; padding: 0 1; text-align: center; height: 1fr; width: 12; }
     .widebox { border: solid; padding: 0 1; height: 1fr; width: 1fr; }
+    .centered-wide { border: solid; padding: 0 1; height: 1fr; width: 1fr; text-align: center; }
     """
 
     def __init__(self, prog: Path, *args, **kwargs) -> None:
@@ -93,6 +94,9 @@ class ScreenApp(App):
         asm = Assembler()
         code = asm.run(prog.read_text())
         self.vm.load(code)
+        self.out = IntWriter()
+        self.vm.set_output(self.out.write)
+        self.vm.set_input(int_reader([5]))  # TODO: this is not an appropriate solution for the input
 
     def update_widgets(self) -> None:
         for reg in ("pc", "acc", "cir", "mar", "mdr"):
@@ -100,30 +104,36 @@ class ScreenApp(App):
                 self.get_widget_by_id(reg, CurrentInstruction).update(getattr(self.vm, reg))
             else:
                 self.get_widget_by_id(reg, Register).update(getattr(self.vm, reg))
+        self.get_widget_by_id("memory", Static).update(self.vm.memory)
         self.get_widget_by_id("z-flag", BoxedStatic).update(str(self.vm.is_zero))
         self.get_widget_by_id("p-flag", BoxedStatic).update(str(self.vm.is_nonnegative))
         self.get_widget_by_id("error", BoxedStatic).update(str(self.vm.error))
+        self.get_widget_by_id("output", BoxedStatic).update(str(self.out))
 
     async def _ready(self) -> None:
         self.update_widgets()
 
     def action_reset(self) -> None:
         self.vm.reset()
+        self.out.reset()
         self.update_widgets()
         self.refresh()
 
     def action_step(self) -> None:
-        # self.vm.single_step()
-        self.vm.mdr = 901
+        # TODO: does not yet recognize the HLT state
+        self.vm.single_step()
         self.update_widgets()
         self.refresh()
 
     def action_execute(self) -> None:
-        # TODO: action needs to be defined ...
+        # TODO: action needs to be defined
         self.update_widgets()
         self.refresh()
 
     def compose(self) -> ComposeResult:
+        # TODO: indicator for the run state is missing
+        # TODO: input contol is missing
+        # TODO: output needs to be newline separated, not comma separated
         yield Header()
         yield Vertical(
             Horizontal(
@@ -138,11 +148,11 @@ class ScreenApp(App):
                 Vertical(
                     Horizontal(
                         Vertical(
-                            Static(str(self.vm), classes="widebox"),
+                            Static("", id="memory", classes="centered-wide"),
                             classes="memorybox"
                         ),
                         Vertical(
-                            BoxedStatic("Output", classes="output"),
+                            BoxedStatic("output", classes="output"),
                             classes="outputbox"
                         )
                     ),

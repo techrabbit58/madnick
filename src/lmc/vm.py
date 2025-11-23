@@ -60,6 +60,9 @@ class IntWriter:
         self.base = base
         self.signed = signed
 
+    def reset(self) -> None:
+        self._cards.clear()
+
     def write(self, value: int) -> None:
         if self.signed:
             value = to_signed(value, self.base)
@@ -203,6 +206,19 @@ class LMC:
             if self.run_state != "run":
                 break
 
+    @property
+    def memory(self) -> str:
+        sb = io.StringIO()
+        print("MEMORY   0     1     2     3     4     5     6     7     8     9", file=sb)
+        print(f"-----{'------' * 10}", file=sb)
+        for i in range(0, self.MEMSIZE, 10):
+            print(f"{i:3}: ", end="", file=sb)
+            for j in range(10):
+                print(f" {self.mem[i + j]:5}", end="", file=sb)
+            print(file=sb)
+        print(f"-----{'------' * 10}", file=sb)
+        return sb.getvalue()
+
     def __str__(self) -> str:
         sb = io.StringIO()
         print("MEMORY   0     1     2     3     4     5     6     7     8     9", file=sb)
@@ -213,9 +229,9 @@ class LMC:
                 print(f" {self.mem[i + j]:5}", end="", file=sb)
             print(file=sb)
         print(f"-----{'------' * 10}", file=sb)
-        print(f"ACC={self.acc}, MAR={self.mar}, MDR={self.mdr}, ", file=sb, end="")
-        print(f"CIR={disassemble(*self.cir)}, PC={self.pc}, RS={self.run_state}", file=sb)
-        print(f"Flags: Z={int(self.is_zero)}, P={int(self.is_nonnegative)}, ", end="", file=sb)
-        print(f"E={int(self.error is not None)}", file=sb)
-        print(f"Error: {self._error}", file=sb)
+        # print(f"ACC={self.acc}, MAR={self.mar}, MDR={self.mdr}, ", file=sb, end="")
+        # print(f"CIR={disassemble(*self.cir)}, PC={self.pc}, RS={self.run_state}", file=sb)
+        # print(f"Flags: Z={int(self.is_zero)}, P={int(self.is_nonnegative)}, ", end="", file=sb)
+        # print(f"E={int(self.error is not None)}", file=sb)
+        # print(f"Error: {self._error}", file=sb)
         return sb.getvalue()
