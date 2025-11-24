@@ -8,9 +8,7 @@ LOOP    lda A           // get the stored number
         brz ENDTHIS     // branch if A is zero due to the decrement
         bra LOOP        // or instead decrement and output once more
 
-ENDTHIS lda A           // at this point A equals 0
-        out             // so output this
-        hlt             // then stop
+ENDTHIS hlt             // stop
 
 // variables
         org 80

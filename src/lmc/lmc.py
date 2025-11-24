@@ -1,4 +1,5 @@
 from pathlib import Path
+from queue import Queue
 from typing import Annotated
 
 import rich
@@ -6,7 +7,7 @@ import typer
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Header, Footer, Static, Digits
+from textual.widgets import Header, Footer, Static, Digits, Input
 
 from .assembler import Assembler
 from .vm import LMC, int_reader, IntWriter, disassemble
@@ -96,7 +97,8 @@ class ScreenApp(App):
         self.vm.load(code)
         self.out = IntWriter(sep="\n")
         self.vm.set_output(self.out.write)
-        self.vm.set_input(int_reader([10]))  # TODO: this is not an appropriate solution for the input
+        self.input_queue = Queue()
+        self.vm.set_input(self.provide_input)
 
     def update_widgets(self) -> None:
         for reg in ("pc", "acc", "cir", "mar", "mdr"):
@@ -132,10 +134,20 @@ class ScreenApp(App):
             self.vm.single_step()
             self.update_widgets()
 
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        event.input.disabled = True
+        event.input.value = ""
+
+    def provide_input(self) -> int:
+        """TODO: input not yet functional"""
+        self.input_queue.put(10)
+        value = self.input_queue.get()
+        return value
+
+    def start_input(self) -> None:
+        self.get_widget_by_id("input", Input).disabled = False
+
     def compose(self) -> ComposeResult:
-        """
-        TODO: input contol is missing
-        """
         yield Header()
         yield Vertical(
             Horizontal(
@@ -166,7 +178,13 @@ class ScreenApp(App):
                         classes="flagsbox"
                     ),
                     Vertical(
-                        Static("Inputs...", classes="widebox"),
+                        Input(
+                            "", id="input",
+                            restrict=r"[+-]?[1-9][0-9]{0,2}",
+                            placeholder="Input...",
+                            disabled=True,
+                            classes="widebox"
+                        ),
                         classes="inputbox"
                     )
                 )

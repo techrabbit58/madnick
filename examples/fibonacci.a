@@ -2,6 +2,10 @@
 // numbers from the Fibonacci series, with 1 as first, 1 as second,
 // 2 as third and so forth.
 
+        lda one
+        sta a
+        sta b
+
         inp
         brz range_error
         sta n
@@ -27,11 +31,13 @@ range_error lda one
         sub one
         out
 
+        org 80
         // variables
-a       dat 1
-b       dat 1
+a       dat
+b       dat
 aux     dat
 n       dat
 
+        org 90
         // constants
 one     dat 1

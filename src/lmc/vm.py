@@ -27,11 +27,11 @@ def disassemble(op: int, addr: int) -> str:
         case (5, addr):
             return f"LDA {addr}"
         case (6, addr):
-            return f"BRZ {addr}"
-        case (7, addr):
-            return f"BRP {addr}"
-        case (8, addr):
             return f"BRA {addr}"
+        case (7, addr):
+            return f"BRZ {addr}"
+        case (8, addr):
+            return f"BRP {addr}"
         case (9, 1):
             return "INP"
         case (9, 2):
