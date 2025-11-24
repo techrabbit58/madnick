@@ -94,9 +94,9 @@ class ScreenApp(App):
         asm = Assembler()
         code = asm.run(prog.read_text())
         self.vm.load(code)
-        self.out = IntWriter()
+        self.out = IntWriter(sep="\n")
         self.vm.set_output(self.out.write)
-        self.vm.set_input(int_reader([5]))  # TODO: this is not an appropriate solution for the input
+        self.vm.set_input(int_reader([10]))  # TODO: this is not an appropriate solution for the input
 
     def update_widgets(self) -> None:
         for reg in ("pc", "acc", "cir", "mar", "mdr"):
@@ -104,11 +104,16 @@ class ScreenApp(App):
                 self.get_widget_by_id(reg, CurrentInstruction).update(getattr(self.vm, reg))
             else:
                 self.get_widget_by_id(reg, Register).update(getattr(self.vm, reg))
-        self.get_widget_by_id("memory", Static).update(self.vm.memory)
+
+        self.get_widget_by_id("memory", Static).update(f"[bold cyan]{self.vm.memory}")
+
         self.get_widget_by_id("z-flag", BoxedStatic).update(str(self.vm.is_zero))
         self.get_widget_by_id("p-flag", BoxedStatic).update(str(self.vm.is_nonnegative))
+        self.get_widget_by_id("state", BoxedStatic).update(self.vm.run_state.upper())
         self.get_widget_by_id("error", BoxedStatic).update(str(self.vm.error))
-        self.get_widget_by_id("output", BoxedStatic).update(str(self.out))
+
+        out = "\n".join(f"{n:03d}" for n in self.out.data)
+        self.get_widget_by_id("output", BoxedStatic).update(out)
 
     async def _ready(self) -> None:
         self.update_widgets()
@@ -117,23 +122,20 @@ class ScreenApp(App):
         self.vm.reset()
         self.out.reset()
         self.update_widgets()
-        self.refresh()
 
     def action_step(self) -> None:
-        # TODO: does not yet recognize the HLT state
         self.vm.single_step()
         self.update_widgets()
-        self.refresh()
 
     def action_execute(self) -> None:
-        # TODO: action needs to be defined
-        self.update_widgets()
-        self.refresh()
+        while self.vm.run_state == "run":
+            self.vm.single_step()
+            self.update_widgets()
 
     def compose(self) -> ComposeResult:
-        # TODO: indicator for the run state is missing
-        # TODO: input contol is missing
-        # TODO: output needs to be newline separated, not comma separated
+        """
+        TODO: input contol is missing
+        """
         yield Header()
         yield Vertical(
             Horizontal(
@@ -148,7 +150,7 @@ class ScreenApp(App):
                 Vertical(
                     Horizontal(
                         Vertical(
-                            Static("", id="memory", classes="centered-wide"),
+                            Static("", id="memory", classes="widebox"),
                             classes="memorybox"
                         ),
                         Vertical(
@@ -159,6 +161,7 @@ class ScreenApp(App):
                     Horizontal(
                         BoxedStatic("z-flag", classes="narrowbox"),
                         BoxedStatic("p-flag", classes="narrowbox"),
+                        BoxedStatic("state", classes="narrowbox"),
                         BoxedStatic("error", classes="widebox"),
                         classes="flagsbox"
                     ),

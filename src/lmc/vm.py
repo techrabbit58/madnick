@@ -55,10 +55,11 @@ def int_reader(cards: Iterable[int]) -> Callable[[], int]:
 
 
 class IntWriter:
-    def __init__(self, base: int = 1000, signed: bool = False) -> None:
+    def __init__(self, *, base: int = 1000, signed: bool = False, sep: str = ", ") -> None:
         self._cards: list[int] = []
         self.base = base
         self.signed = signed
+        self.separator = sep
 
     def reset(self) -> None:
         self._cards.clear()
@@ -73,14 +74,14 @@ class IntWriter:
         return self._cards.copy()
 
     def __str__(self) -> str:
-        return ", ".join(map(str, self._cards))
+        return self.separator.join(map(str, self._cards))
 
 
 class LMC:
     MEMSIZE = 100  # LMC memory size is 100 words
     BASE = 1000  # works only with tens complement numbers 0..999
-    _error: str | None = None
-    _is_terminated: bool = False
+    _error: str | None
+    _is_terminated: bool
     _read_input: Callable[[], int]
     _write_output: Callable[[int], None]
     pc: int  # program counter (PC)
@@ -110,6 +111,8 @@ class LMC:
         self.cir = 0, 0
         self.carry = 1
         self._set_flags()
+        self._is_terminated = False
+        self._error = None
 
     def clear(self) -> None:
         for i in range(len(self.mem)):
@@ -187,9 +190,10 @@ class LMC:
         self._set_flags()
 
     def single_step(self) -> None:
-        self.fetch()
-        self.decode()
-        self.execute()
+        if self.run_state == "run":
+            self.fetch()
+            self.decode()
+            self.execute()
 
     @property
     def run_state(self) -> str:
@@ -217,6 +221,7 @@ class LMC:
                 print(f" {self.mem[i + j]:5}", end="", file=sb)
             print(file=sb)
         print(f"-----{'------' * 10}", file=sb)
+        print(f"        Current instruction: {disassemble(*self.cir)}", file=sb)
         return sb.getvalue()
 
     def __str__(self) -> str:
