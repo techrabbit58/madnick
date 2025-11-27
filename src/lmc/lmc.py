@@ -1,13 +1,12 @@
 from pathlib import Path
-from queue import Queue
 from typing import Annotated
 
 import rich
 import typer
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
-from textual.widgets import Header, Footer, Static, Digits, Input
+from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.widgets import Header, Footer, Static, Digits, Input, Label
 
 from .assembler import Assembler
 from .vm import LMC, int_reader, IntWriter, disassemble
@@ -65,25 +64,32 @@ class BoxedStatic(Static):
         self.border_title = title.upper()
 
 
+class BoxedVertical(Vertical):
+    def __init__(self, title: str, *args, **kwargs) -> None:
+        super().__init__(*args, id=title, **kwargs)
+        self.border_title = title
+
+
 class ScreenApp(App):
     TITLE = "LMC"
     SUB_TITLE = "The Little Man Computer"
 
     BINDINGS = [
-        Binding("r", "reset", "Reset"),
-        Binding("s", "step", "Step"),
-        Binding("x", "execute", "Execute"),
+        Binding("enter", "step", "Step"),
+        Binding("r", "execute", "Run"),
+        Binding("ctrl+r", "reset", "Reset", priority=True),
         Binding("q", "quit", "Quit", priority=True),
     ]
 
     DEFAULT_CSS = """
-    .registerbox { width: auto; margin: 1 1; }
+    .registerbox { width: auto; margin: 1 1 0 1; }
     .memorybox { width: 1fr; height: 1fr; margin: 1 1 0 0; }
-    .outputbox { width: auto; height: 1fr; margin: 1 0 0 0; }
+    .outputbox { border: solid; width: 12; height: 1fr; margin: 1 0 0 0; }
     .flagsbox { width: 1fr; height: 3; margin: 0 1 0 0; }
-    .inputbox { width: 1fr; height: 3; margin: 0 1 0 0; }
-    .register { border: solid; text-align: right; width: 20; padding: 0 1 0 0; }
-    .output { border: solid; text-align: center; width: 13; height: 1fr; padding: 0 1; }
+    .input-label { margin: 0 1 0 0; }
+    .inputbox { border: solid; width: 1fr; height: 3; margin: 0 1 0 0; padding: 0 1; }
+    .register { border: solid; text-align: right; width: 17; padding: 0 1 0 0; }
+    .output { text-align: center; width: 1fr; height: auto; padding: 0 1; }
     .narrowbox { border: solid; padding: 0 1; text-align: center; height: 1fr; width: 12; }
     .widebox { border: solid; padding: 0 1; height: 1fr; width: 1fr; }
     .centered-wide { border: solid; padding: 0 1; height: 1fr; width: 1fr; text-align: center; }
@@ -97,8 +103,7 @@ class ScreenApp(App):
         self.vm.load(code)
         self.out = IntWriter(sep="\n")
         self.vm.set_output(self.out.write)
-        self.input_queue = Queue()
-        self.vm.set_input(self.provide_input)
+        self.next_action = None
 
     def update_widgets(self) -> None:
         for reg in ("pc", "acc", "cir", "mar", "mdr"):
@@ -117,35 +122,52 @@ class ScreenApp(App):
         out = "\n".join(f"{n:03d}" for n in self.out.data)
         self.get_widget_by_id("output", BoxedStatic).update(out)
 
+        if self.vm.run_state == "input":
+            self.start_input()
+
     async def _ready(self) -> None:
         self.update_widgets()
 
     def action_reset(self) -> None:
+        self.next_action = None
         self.vm.reset()
         self.out.reset()
+        self.stop_input()
         self.update_widgets()
 
     def action_step(self) -> None:
+        self.next_action = None
         self.vm.single_step()
         self.update_widgets()
 
     def action_execute(self) -> None:
+        self.next_action = self.action_execute
         while self.vm.run_state == "run":
             self.vm.single_step()
             self.update_widgets()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
-        event.input.disabled = True
-        event.input.value = ""
-
-    def provide_input(self) -> int:
-        """TODO: input not yet functional"""
-        self.input_queue.put(10)
-        value = self.input_queue.get()
-        return value
+        self.stop_input()
+        if event.value:
+            self.vm.provide_input(int(event.value))
+            event.input.value = ""
+        else:
+            self.vm.provide_input(0)
+            self.vm.set_error_missing_input()
+        self.update_widgets()
+        if self.next_action:
+            self.next_action()
 
     def start_input(self) -> None:
-        self.get_widget_by_id("input", Input).disabled = False
+        self.get_widget_by_id("ilabel", Label).update("[bold cyan]INPUT:")
+        input_box = self.get_widget_by_id("input", Input)
+        input_box.disabled = False
+        input_box.focus()
+
+    def stop_input(self) -> None:
+        self.get_widget_by_id("ilabel", Label).update("[grey]INPUT:")
+        input_box = self.get_widget_by_id("input", Input)
+        input_box.disabled = True
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -165,9 +187,10 @@ class ScreenApp(App):
                             Static("", id="memory", classes="widebox"),
                             classes="memorybox"
                         ),
-                        Vertical(
-                            BoxedStatic("output", classes="output"),
-                            classes="outputbox"
+                        BoxedVertical(
+                            "OUTPUT",
+                            VerticalScroll(BoxedStatic("output", classes="output")),
+                            classes="outputbox",
                         )
                     ),
                     Horizontal(
@@ -177,13 +200,16 @@ class ScreenApp(App):
                         BoxedStatic("error", classes="widebox"),
                         classes="flagsbox"
                     ),
-                    Vertical(
+                    Horizontal(
+                        Label("[grey]INPUT:", id="ilabel", classes="input-label"),
                         Input(
                             "", id="input",
-                            restrict=r"[+-]?[1-9][0-9]{0,2}",
+                            restrict=r"(0|[1-9][0-9]{0,2})?",
                             placeholder="Input...",
                             disabled=True,
-                            classes="widebox"
+                            compact=True,
+                            select_on_focus=True,
+                            classes="widebox",
                         ),
                         classes="inputbox"
                     )

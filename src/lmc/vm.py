@@ -82,8 +82,9 @@ class LMC:
     BASE = 1000  # works only with tens complement numbers 0..999
     _error: str | None
     _is_terminated: bool
-    _read_input: Callable[[], int]
-    _write_output: Callable[[int], None]
+    _read_input: Callable[[], int] = None
+    _write_output: Callable[[int], None] = None
+    _wait_for_input: bool  # wait for inut if _read_input method is missing
     pc: int  # program counter (PC)
     acc: int  # accumulator (ACC)
     mar: int  # memory address register (MAR)
@@ -113,6 +114,7 @@ class LMC:
         self._set_flags()
         self._is_terminated = False
         self._error = None
+        self._wait_for_input = False
 
     def clear(self) -> None:
         for i in range(len(self.mem)):
@@ -170,10 +172,15 @@ class LMC:
                 if self.is_nonnegative:
                     self.pc = self.mar
             case 9 if self.cir[1] == 1:  # INP
-                n = self._read_input()
+                try:
+                    n = self._read_input()
+                except TypeError:  # Input method not assigned
+                    n = None
+                    self._wait_for_input = True
+                if self._wait_for_input:
+                    return
                 if n is None:
-                    self._error = f"End of input file"
-                    self._is_terminated = True
+                    self.set_error_missing_input()
                     return
                 if not 0 <= n < self.BASE:
                     self._error = f"Input out of range (0..{self.BASE - 1}): {n}"
@@ -181,13 +188,28 @@ class LMC:
                     return
                 self.acc = n
             case 9 if self.cir[1] == 2:  # OUT
-                self._write_output(self.acc)
+                if self._write_output is not None:
+                    self._write_output(self.acc)
             case _:
                 self._error = f"Bad instruction {self.cir}"
                 self._is_terminated = True
         self.carry = self.acc // self.BASE
         self.acc %= self.BASE
         self._set_flags()
+
+    def set_error_missing_input(self) -> None:
+        self._error = f"End of input file"
+        self._is_terminated = True
+
+    def provide_input(self, n: int) -> None:
+        if not 0 <= n < self.BASE:
+            self._error = f"Input out of range (0..{self.BASE - 1}): {n}"
+            self._is_terminated = True
+            return
+        self.carry = n // self.BASE
+        self.acc = n % self.BASE
+        self._set_flags()
+        self._wait_for_input = False
 
     def single_step(self) -> None:
         if self.run_state == "run":
@@ -197,7 +219,9 @@ class LMC:
 
     @property
     def run_state(self) -> str:
-        if not self._is_terminated:
+        if self._wait_for_input:
+            return "input"
+        elif not self._is_terminated:
             return "run"
         elif self._error:
             return "abort"
