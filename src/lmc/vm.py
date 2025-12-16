@@ -90,8 +90,8 @@ class LMC:
     mar: int  # memory address register (MAR)
     mdr: int  # memory data register (MDR)
     cir: tuple[int, int]  # current instruction register (CIR)
-    is_zero: bool
-    is_nonnegative: bool
+    z_flag: bool
+    p_flag: bool
 
     def __init__(self) -> None:
         self.mem = [0] * self.MEMSIZE
@@ -135,8 +135,8 @@ class LMC:
         self.mdr = self.mem[self.mar]
 
     def _set_flags(self) -> None:
-        self.is_zero = self.acc == 0
-        self.is_nonnegative = self.acc < self.BASE // 2
+        self.z_flag = self.acc == 0
+        self.p_flag = self.acc < self.BASE // 2
 
     def fetch(self) -> None:
         self.mar = self.pc
@@ -164,10 +164,10 @@ class LMC:
             case 6:  # BRA addr
                 self.pc = self.mar
             case 7:  # BRZ addr
-                if self.is_zero:
+                if self.z_flag:
                     self.pc = self.mar
             case 8:  # BRP addr
-                if self.is_nonnegative:
+                if self.p_flag:
                     self.pc = self.mar
             case 9 if self.cir[1] == 1:  # INP
                 try:

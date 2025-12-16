@@ -59,7 +59,7 @@ and implicit addressing (INP, OUT, HLT). Indirect addressing is not supported.
 * ADD works like ACC = (ACC + MDR) mod 1000.
 * SUB works like ACC = (ACC + 1000 - MDR) mod 1000
 
-The Zero and Positive registers are adjusted after any opration affecting ACC.
+The Z and P flags are adjusted after any opration affecting ACC.
 
 ## Programs
 * The simulator core functions are in the source file [vm.py](./src/lmc/vm.py).
