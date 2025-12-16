@@ -25,7 +25,7 @@ output  lda a
         sta b
         bra loop
 
-        // in case of a range error, answer "-1" (10's komplement)
+        // in case of a range error, answer "-1" (tens complement)
 range_error lda one
         sub one
         sub one

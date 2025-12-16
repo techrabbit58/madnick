@@ -16,7 +16,7 @@ LOOP    LDA RESULT   // Load the RESULT
 ENDLOOP LDA RESULT   // Load RESULT
         OUT          // Output RESULT
         BRA START    // Branch to the START to initialize and get another input VALUE
-END     COB          // HALT - a zero was entered so done!
+END     COB          // HALT - a zero was entered, so we are done!
 
 RESULT  DAT          // Computed result (defaults to 0)
 COUNT   DAT          // Counter (defaults to 0)
