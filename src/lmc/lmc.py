@@ -23,7 +23,7 @@ def run(
         prog: Annotated[Path, typer.Argument(
             exists=True, help="The LMC assembler program to be run")],
         inp: Annotated[list[int], typer.Argument(
-            min=-500, max=499, help="Run with a list of input numbers")] = None,
+            min=-500, max=999, help="Run with a list of input numbers")] = None,
         signed: Annotated[bool, typer.Option(
             "--signed/--unsigne", help="Signed output (default: unsigned numbers)")] = False) -> None:
     asm = Assembler()
@@ -220,7 +220,8 @@ class ScreenApp(App):
 
 
 @app.command(help="Assemble, load and interactively step through a given LMC program")
-def trace(prog: Path) -> None:
+def trace(prog: Annotated[Path, typer.Argument(
+            exists=True, help="The LMC assembler program to be run")]) -> None:
     visual_app = ScreenApp(prog)
     visual_app.sub_title = str(prog.absolute())
     visual_app.run()
