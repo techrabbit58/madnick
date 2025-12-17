@@ -2,43 +2,26 @@
 ## Introduction
 The "[Little Man Computer](https://en.wikipedia.org/wiki/Little_Man_Computer)" 
 (LMC) is a very basic model
-of a [van Neumann computer](https://en.wikipedia.org/wiki/Von_Neumann_architecture)
+of a [van Neumann computer](https://en.wikipedia.org/wiki/Von_Neumann_architecture), made
 for education purpose. The LMC as a concept was originally created by 
 [Dr. Stuart Madnick](https://en.wikipedia.org/wiki/Stuart_Madnick) 
 at [MIT](https://en.wikipedia.org/wiki/Massachusetts_Institute_of_Technology) in 1965.
-
-The LMC is IMHO a good entry point if one wants to learn about modern computer
-architectures and assembler programming and is planning for the first steps.
-It introduces the 
+ 
+My goal when working on my LMC simulator was to practice creating a little
+grammar based parser (using [lark](https://pypi.org/project/lark/)), to make a model of the
 [fetch/decode/execute cycle](https://en.wikipedia.org/wiki/Instruction_cycle) 
-of the CPU and implements fundamental operations.
-
-There are lots of simulators available on the internet, and a lot has been written
-about the LMC's purpose, use and programming. There have also been constructed
-different versions of the LMC, by different people, and some have extended the
-basic LMC concept.
+of a CPU and to implement some fundamental CPU operations.
 
 ## Scope
-I do not see much room for useful extensions to Dr. Madnicks original LMC of 1965.
-Too limited is its 100 "mailboxes" wide RAM for program _and_ data. So there is not
-enough room for a call stack, or arrays and so on. Since we must work with only
-one register (the accumulator, ACC), doing indexed operations, e.g. for handling
-arrays, consumes a lot of RAM for the instructions.
-
-More than that, adding extra capabilities to the LMC makes it more and more
-similar to the real 6502 processor. Isn't it better to step over when outgrowing
-the LMC concept?
-
 My LMC simulator follows the 
 [LMC definition of the Marquette University](http://www.povinelli.org/teaching/eece2710/lmc.html), 
-Milwaukee, Wisconsin, USA.
-
-I decided to use the Mnemonics as reported by [Wikipedia](https://en.wikipedia.org/wiki/Little_Man_Computer#Instructions), 
-and not the Marquette LMC mnemonics. I also decided not to implement Marquette's "store address" yet.
+Milwaukee, Wisconsin, USA, but
+with the Mnemonics as reported by [Wikipedia](https://en.wikipedia.org/wiki/Little_Man_Computer#Instructions), 
+and not the Marquette LMC mnemonics. I also did not implement Marquette's "store address".
 Therefore, opcode 4 remains as "reserved".
 
 My implementation of the LMC simulator stays decimal, but does only allow positive numbers for addresses,
-RAM cells and register values. My ALU simulation uses ten's complement addition and folds back
+RAM cells and register values. My ALU simulation uses ten's complement addition. It folds back
 overflows into the including number ranges (0, 99) for addresses and (0, 999) for memory and register values.
 
 __LMC simulator's registers__
@@ -54,7 +37,7 @@ __LMC simulator's registers__
 | P-Flag | Positive Flag                | Set if the ACC has a value greater or equal 500,<br>reset if 0 <= ACC < 500                                                 |
 
 The LMC instructions support direct addressing (ADD, SUB, LDA, STA, BRA, BRP, BRZ) 
-and implicit addressing (INP, OUT, HLT). Indirect addressing is not supported.
+and implicit addressing (INP, OUT, HLT). Indirect addressing is not supported on CPU level.
 
 * ADD works like ACC = (ACC + MDR) mod 1000.
 * SUB works like ACC = (ACC + 1000 - MDR) mod 1000
