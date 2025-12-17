@@ -114,8 +114,8 @@ class ScreenApp(App):
 
         self.get_widget_by_id("memory", Static).update(f"[bold cyan]{self.vm.memory}")
 
-        self.get_widget_by_id("z-flag", BoxedStatic).update(str(self.vm.is_zero))
-        self.get_widget_by_id("p-flag", BoxedStatic).update(str(self.vm.is_nonnegative))
+        self.get_widget_by_id("z-flag", BoxedStatic).update(str(self.vm.z_flag))
+        self.get_widget_by_id("p-flag", BoxedStatic).update(str(self.vm.p_flag))
         self.get_widget_by_id("state", BoxedStatic).update(self.vm.run_state.upper())
         self.get_widget_by_id("error", BoxedStatic).update(str(self.vm.error))
 
