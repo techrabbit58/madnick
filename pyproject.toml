@@ -6,7 +6,7 @@ requires-python = ">=3.14"
 dependencies = [
     "lark>=1.3.1",
     "rich>=14.2.0",
-    "textual==7.2.0",
+    "textual==7.3.0",
     "typer>=0.20.0",
 ]
 
