@@ -62,7 +62,7 @@ the Terminal User Interface (TUI). The "run mode" uses [Rich](https://pypi.org/p
 Example programs for the LMC are given in the [examples](./examples) directory.
 
 ## Dependencies
-* Python 14.x
+* Python 3.14.x
 * Rich
 * Textual
 * Lark
