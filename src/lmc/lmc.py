@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Annotated
 
@@ -11,7 +12,7 @@ from textual.widgets import Header, Footer, Static, Digits, Input, Label
 from .assembler import Assembler
 from .vm import LMC, int_reader, IntWriter, disassemble
 
-app = typer.Typer(
+app: typer.Typer = typer.Typer(
     help="Run an LMC program.",
     no_args_is_help=True,
     add_completion=False,
@@ -22,8 +23,8 @@ app = typer.Typer(
 def run(
         prog: Annotated[Path, typer.Argument(
             exists=True, help="The LMC assembler program to be run")],
-        inp: Annotated[list[int], typer.Argument(
-            min=-500, max=999, help="Run with a list of input numbers")] = None,
+        inp: Annotated[Iterable[int], typer.Argument(
+            min=-500, max=999, help="Run with a list of input numbers")],
         signed: Annotated[bool, typer.Option(
             "--signed/--unsigne", help="Signed output (default: unsigned numbers)")] = False) -> None:
     asm = Assembler()
@@ -47,11 +48,13 @@ class BoxedDigits(Digits):
 
 
 class Register(BoxedDigits):
+    # noinspection method-overriding
     def update(self, value: int) -> None:
         super().update(f"{value:03d}")
 
 
 class CurrentInstruction(BoxedDigits):
+    # noinspection method-overriding
     def update(self, instruction: tuple[int, int]) -> None:
         opcode, addr = instruction
         opname, *_ = disassemble(opcode, addr).split()
@@ -105,6 +108,7 @@ class ScreenApp(App):
         self.vm.set_output(self.out.write)
         self.next_action = None
 
+    # noinspection string-conversion-without-dunder-method
     def update_widgets(self) -> None:
         for reg in ("pc", "acc", "cir", "mar", "mdr"):
             if reg == "cir":
@@ -146,6 +150,7 @@ class ScreenApp(App):
             self.vm.single_step()
             self.update_widgets()
 
+    # noinspection calling-non-callable
     def on_input_submitted(self, event: Input.Submitted) -> None:
         self.stop_input()
         if event.value:

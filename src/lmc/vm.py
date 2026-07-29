@@ -42,6 +42,7 @@ def disassemble(op: int, addr: int) -> str:
             return f"undefined {op, addr}"
 
 
+# noinspection bad-return
 def int_reader(cards: Iterable[int]) -> Callable[[], int]:
     card = iter(cards) if cards is not None else iter([])
 
@@ -82,8 +83,8 @@ class LMC:
     BASE = 1000  # works only with tens complement numbers 0..999
     _error: str | None
     _is_terminated: bool
-    _read_input: Callable[[], int] = None
-    _write_output: Callable[[int], None] = None
+    _read_input: Callable[[], int] | None = None
+    _write_output: Callable[[int], None] | None = None
     _wait_for_input: bool  # wait for inut if _read_input method is missing
     pc: int  # program counter (PC)
     acc: int  # accumulator (ACC)
