@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from pathlib import Path
 from typing import Annotated
 
@@ -23,7 +22,7 @@ app: typer.Typer = typer.Typer(
 def run(
         prog: Annotated[Path, typer.Argument(
             exists=True, help="The LMC assembler program to be run")],
-        inp: Annotated[Iterable[int], typer.Argument(
+        inp: Annotated[list[int], typer.Argument(
             min=-500, max=999, help="Run with a list of input numbers")],
         signed: Annotated[bool, typer.Option(
             "--signed/--unsigne", help="Signed output (default: unsigned numbers)")] = False) -> None:
